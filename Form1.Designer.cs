@@ -1,4 +1,4 @@
-﻿namespace BackUpSave {
+namespace BackUpSave {
     partial class Form1 {
         /// <summary>
         /// Required designer variable.
@@ -29,7 +29,7 @@
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.btnBackup = new System.Windows.Forms.Button();
-            this.btnEraseFile = new System.Windows.Forms.Button();
+            this.btnEraseFilePaths = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
@@ -86,14 +86,16 @@
             this.btnBackup.TabIndex = 6;
             this.btnBackup.Text = "Back Up Files";
             this.btnBackup.UseVisualStyleBackColor = true;
+            this.btnBackup.Click += new System.EventHandler(this.BtnBackup_Click);
             // 
-            // btnEraseFile
+            // btnEraseFilePaths
             // 
-            this.btnEraseFile.Location = new System.Drawing.Point(998, 496);
-            this.btnEraseFile.Name = "btnEraseFile";
-            this.btnEraseFile.Size = new System.Drawing.Size(21, 23);
-            this.btnEraseFile.TabIndex = 7;
-            this.btnEraseFile.UseVisualStyleBackColor = true;
+            this.btnEraseFilePaths.Location = new System.Drawing.Point(998, 496);
+            this.btnEraseFilePaths.Name = "btnEraseFilePaths";
+            this.btnEraseFilePaths.Size = new System.Drawing.Size(21, 23);
+            this.btnEraseFilePaths.TabIndex = 7;
+            this.btnEraseFilePaths.UseVisualStyleBackColor = true;
+            this.btnEraseFilePaths.Click += new System.EventHandler(this.BtnEraseFilePaths_Click);
             // 
             // label3
             // 
@@ -111,7 +113,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1031, 531);
             this.Controls.Add(this.label3);
-            this.Controls.Add(this.btnEraseFile);
+            this.Controls.Add(this.btnEraseFilePaths);
             this.Controls.Add(this.btnBackup);
             this.Controls.Add(this.btnFileRelease);
             this.Controls.Add(this.label2);
@@ -133,7 +135,7 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Button btnBackup;
-        private System.Windows.Forms.Button btnEraseFile;
+        private System.Windows.Forms.Button btnEraseFilePaths;
         private System.Windows.Forms.Label label3;
     }
 }
