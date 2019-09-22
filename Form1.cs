@@ -29,12 +29,9 @@ namespace BackUpSave {
 
 
         //Generate file name with semi-unique key
-        public string GenerateFileKey() {
-            return ("_Backup[" + DateTime.Now.Month + DateTime.Now.Day + DateTime.Now.Year + "-" + DateTime.Now.Hour + DateTime.Now.Millisecond + "]");
-        }
 
         public string GenerateKey() {
-            return (DateTime.Now.Month + DateTime.Now.Day + DateTime.Now.Year + "-" + DateTime.Now.Hour + DateTime.Now.Millisecond);
+            return ("[" + DateTime.Now.Month + "-" + DateTime.Now.Day + "-" + DateTime.Now.Year + "_" +DateTime.Now.Hour + DateTime.Now.Millisecond + "]");
         }
         //capture current users name (used to create Backup directory in appropriate place)
         static String currentUser = Environment.UserName;
@@ -50,7 +47,7 @@ namespace BackUpSave {
 
             foreach (string value in array) {
                 storage.Append(value);
-            }
+            }//end foreach
 
             return (storage.ToString());
         }//end convert method
@@ -72,7 +69,7 @@ namespace BackUpSave {
 
             if (!File.Exists(logFilePath)) {
                 File.Create(logFilePath).Close();
-            }
+            }//end if
 
 
 
@@ -80,7 +77,7 @@ namespace BackUpSave {
 
             if (logFileLength == 0) {
                 //do nothing 
-            }
+            }//end if
             else {
                 StreamReader readFilePaths = new StreamReader(logFilePath);
 
@@ -88,10 +85,10 @@ namespace BackUpSave {
 
                 while ((temp = readFilePaths.ReadLine()) != null) {
                     listBox1.Items.Add(temp);
-                }
+                }//end while
 
                 readFilePaths.Close();
-            }
+            }//end else
 
 
         }//end Form1_Load
@@ -122,7 +119,7 @@ namespace BackUpSave {
 
             }
 
-        }//end textBoxFile_DragDrop
+        }//end textBoxFile_DragDrop handler
 
 
 
@@ -131,37 +128,61 @@ namespace BackUpSave {
             string pathToBackups = (@"C:\Users\" + currentUser + @"\Backups");
             string logFilePath = Path.Combine(pathToBackups, "filesToBackup.txt");
 
-            string backupDirName = "Backup-[" + GenerateKey() + "]";
+            string backupDirName = "Backup" + GenerateKey();
             string pathToNewBackupDir = Path.Combine(pathToBackups, backupDirName);
-            Directory.CreateDirectory(pathToNewBackupDir);
+            
 
             string successfulCopyMsg = "Files successfully backed up!";
+            string emptyPathsMsg = "ERROR: There are no files scheduled to be backed up";
             string line = "";
             
 
             StreamReader readFilePaths = new StreamReader(logFilePath);
-           
 
-            while ((line = readFilePaths.ReadLine()) != null) {
+            //if there are no files in filesToBackup.txt: break out of method and inform user
+            if ((line = readFilePaths.ReadLine()) == null) {
+                listBox2.Items.Add(emptyPathsMsg);
+            }//end if
 
-                string sourceFile = line;
+            //else: create directory and prepare files to populate it
+            else {
+
+                //while filesToBackup.txt has another line, continue looping
+                while (line != null) {
+
+                    Directory.CreateDirectory(pathToNewBackupDir);
+
+                    string sourceFile = line;
+
+                    FileAttributes dirCheck = File.GetAttributes(sourceFile);
+
+                    if ((dirCheck & FileAttributes.Directory) == FileAttributes.Directory) {
+                        listBox2.Items.Add("FATAL ERROR: CANNOT PROCESS DIRECTORIES YET");
+                        return;
+                    }
+                 
+
+                    //Build file name of newly created file by extracting info from source file
+                    string copyFileName = Path.GetFileName(sourceFile);
+
+                  
+
+
+                    //combine path to backups directory with semi-unique file name
+                    string completeFileName = Path.Combine(pathToNewBackupDir, copyFileName);
+
+
+                    File.Copy(sourceFile, completeFileName);
+
+
+                }//end while
+
+                listBox2.Items.Add(successfulCopyMsg);
+
                 
+            }//end else
 
-                //Build file name of newly created file by extracting info from source file
-                string copyFileName = Path.GetFileName(sourceFile);
-                
-
-                //combine path to backups directory with semi-unique file name
-                string completeFileName = Path.Combine(pathToNewBackupDir, copyFileName);
-
-
-                File.Copy(sourceFile, completeFileName);
-               
-               
-            }
-            listBox2.Items.Add(successfulCopyMsg);
             readFilePaths.Close();
-
 
         }//end Backup Button Click
 
@@ -182,6 +203,7 @@ namespace BackUpSave {
             listBox1.Items.Clear();
             listBox2.Items.Add(dumpFilePathsMsg);
 
-        }
+        }//end Erase Paths button click
     }
 }
+
