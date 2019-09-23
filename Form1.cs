@@ -15,29 +15,42 @@ using System.IO;
 
 namespace BackUpSave {
 
-    public partial class Form1 : Form {
+    public partial class FormMain : Form {
 
 
 
-        public Form1() {
+        public FormMain() {
             InitializeComponent();
-            this.btnFileRelease.DragDrop += new DragEventHandler(this.btnFileRelease_DragDrop);
-            this.btnFileRelease.DragEnter += new DragEventHandler(this.btnFileRelease_DragEnter);
-        }
+            this.btn_fileRelease.DragDrop += new DragEventHandler(this.btnFileRelease_DragDrop);
+            this.btn_fileRelease.DragEnter += new DragEventHandler(this.btnFileRelease_DragEnter);
+        }//end Form init
 
 
-
-
-        //Generate file name with semi-unique key
-
+        //Generate semi-unique key to append to file name
         public string GenerateKey() {
             return ("[" + DateTime.Now.Month + "-" + DateTime.Now.Day + "-" + DateTime.Now.Year + "_" +DateTime.Now.Hour + DateTime.Now.Millisecond + "]");
         }
+
         //capture current users name (used to create Backup directory in appropriate place)
         static String currentUser = Environment.UserName;
 
 
+        //create static variables to store paths to "Backup" directory and .txt file that stores files paths so
+        //it is persistent across multiple program runs
+        static string pathToBackups = (@"C:\Users\" + currentUser + @"\Backups");
+        static string logFilePath = Path.Combine(pathToBackups, "filesToBackup.txt");
 
+        //messages to be displayed to user via console listbox
+        //successful 
+        static string msgSuccessSched = "New file scheduled to be backed up!";
+        static string msgSuccessBackup = "Files successfully backed up!";
+
+        //errors
+        static string msgErrorDuplicate = "ERROR: File is already scheduled to backed up!";
+        static string msgErrorNoPaths = "ERROR: There are no files scheduled to be backed up";
+
+        //information
+        static string msgInfoDumpTxt = "IMPORTANT: Files to be backed up has been dumped";
 
 
         //method that convers a string array to a normal string via StringBuilder
@@ -56,110 +69,91 @@ namespace BackUpSave {
 
         //On Form Load
         private void Form1_Load(object sender, EventArgs e) {
-            btnFileRelease.AllowDrop = true;
-
-            string pathToBackups = (@"C:\Users\" + currentUser + @"\Backups");
-            string logFilePath = Path.Combine(pathToBackups, "filesToBackup.txt");
-
+            btn_fileRelease.AllowDrop = true;
 
             //On form load, create a directory titled "Backups" in current user's home directory
             //will be ignored automatically if directory already exists
             Directory.CreateDirectory(pathToBackups);
 
-
+            //if "Backups" does not exist, create it and close it
             if (!File.Exists(logFilePath)) {
                 File.Create(logFilePath).Close();
+                return;
             }//end if
 
+           
+           StreamReader readFilePaths = new StreamReader(logFilePath);
 
+           string temp = "";
 
-            long logFileLength = new FileInfo(logFilePath).Length;
-
-            if (logFileLength == 0) {
-                //do nothing 
-            }//end if
-            else {
-                StreamReader readFilePaths = new StreamReader(logFilePath);
-
-                string temp = "";
-
-                while ((temp = readFilePaths.ReadLine()) != null) {
-                    listBox1.Items.Add(temp);
-                }//end while
+           while ((temp = readFilePaths.ReadLine()) != null) {
+                listbox_filePaths.Items.Add(temp);
+           }//end while
 
                 readFilePaths.Close();
-            }//end else
-
+           
 
         }//end Form1_Load
 
 
-
+        //dragdrop event to handle released files and directories
         private void btnFileRelease_DragDrop(object sender, DragEventArgs e) {
-
-            string pathToBackups = (@"C:\Users\" + currentUser + @"\Backups");
-            string logFilePath = Path.Combine(pathToBackups, "filesToBackup.txt");
 
             string[] s = (string[])e.Data.GetData(DataFormats.FileDrop, false);
             string sourceFile = ConvertStringArray(s);
 
-
-
-            string successfulSchedMsg = "New file scheduled to be backed up!";
-            string duplicateMsg = "ERROR: File is already scheduled to backed up!";
+           
 
             if (File.ReadAllText(logFilePath).Contains(sourceFile)) {
-                listBox2.Items.Add(duplicateMsg);
+                listBox_console.Items.Add(msgErrorDuplicate);
             }
             else {
 
                 File.AppendAllText(logFilePath, sourceFile + Environment.NewLine);
-                listBox1.Items.Add(sourceFile);
-                listBox2.Items.Add(successfulSchedMsg);
+                listbox_filePaths.Items.Add(sourceFile);
+                listBox_console.Items.Add(msgSuccessSched);
 
             }
 
         }//end textBoxFile_DragDrop handler
 
 
-
+        //button to initiate backup to directory created inside "Backups" directory in user's specified drive
         private void BtnBackup_Click(object sender, EventArgs e) {
-
-            string pathToBackups = (@"C:\Users\" + currentUser + @"\Backups");
-            string logFilePath = Path.Combine(pathToBackups, "filesToBackup.txt");
 
             string backupDirName = "Backup" + GenerateKey();
             string pathToNewBackupDir = Path.Combine(pathToBackups, backupDirName);
-            
-
-            string successfulCopyMsg = "Files successfully backed up!";
-            string emptyPathsMsg = "ERROR: There are no files scheduled to be backed up";
+                    
             string line = "";
             
 
             StreamReader readFilePaths = new StreamReader(logFilePath);
 
             //if there are no files in filesToBackup.txt: break out of method and inform user
-            if ((line = readFilePaths.ReadLine()) == null) {
-                listBox2.Items.Add(emptyPathsMsg);
+            if (readFilePaths.ReadLine() == null) {
+                listBox_console.Items.Add(msgErrorNoPaths);
             }//end if
 
             //else: create directory and prepare files to populate it
             else {
 
                 //while filesToBackup.txt has another line, continue looping
-                while (line != null) {
+                while ((line = readFilePaths.ReadLine()) != null) {
 
+                    //create directory for backups to be stored
                     Directory.CreateDirectory(pathToNewBackupDir);
 
                     string sourceFile = line;
-
+          
                     FileAttributes dirCheck = File.GetAttributes(sourceFile);
 
+                    //test if current path is a directory
+                    //if so, handle it differently
                     if ((dirCheck & FileAttributes.Directory) == FileAttributes.Directory) {
-                        listBox2.Items.Add("FATAL ERROR: CANNOT PROCESS DIRECTORIES YET");
+                        listBox_console.Items.Add("FATAL ERROR: CANNOT PROCESS DIRECTORIES YET");
                         return;
                     }
+                    
                  
 
                     //Build file name of newly created file by extracting info from source file
@@ -177,11 +171,13 @@ namespace BackUpSave {
 
                 }//end while
 
-                listBox2.Items.Add(successfulCopyMsg);
+                //inform user everything was sucessful
+                listBox_console.Items.Add(msgSuccessBackup);
 
                 
             }//end else
 
+            //close .txt file storing file paths
             readFilePaths.Close();
 
         }//end Backup Button Click
@@ -194,16 +190,22 @@ namespace BackUpSave {
                 e.Effect = DragDropEffects.None;
         }//end textBoxFile_DragEnter
 
+
+        //button to erase .txt file holding file paths for backups
         private void BtnEraseFilePaths_Click(object sender, EventArgs e) {
-            string pathToBackups = (@"C:\Users\" + currentUser + @"\Backups");
-            string logFilePath = Path.Combine(pathToBackups, "filesToBackup.txt");
-            string dumpFilePathsMsg = "IMPORTANT: Files to be backed up has been dumped";
 
             File.Create(logFilePath).Close();
-            listBox1.Items.Clear();
-            listBox2.Items.Add(dumpFilePathsMsg);
+            listbox_filePaths.Items.Clear();
+            listBox_console.Items.Add(msgInfoDumpTxt);
 
         }//end Erase Paths button click
-    }
-}
 
+
+        //button to clear console list box
+        private void Btn_clearConsole_Click(object sender, EventArgs e) {
+            listBox_console.Items.Clear();
+        }//end clear console button click
+
+
+    }//end FormBackup
+}//end namespace BackUpSave
